@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<!-- Students: Please use this week's project for Week 13: Assignment 11: Basic Game. 
+     You will need to replace the contents of this HTML file with your own work, 
+     and create any other files, if any, required for the assignment.
+     When you are done, be certain to submit the assignment in both Repl.it and Canvas to be graded. -->
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>CS50C Week13</title>
+
+	<!doctype html>
+	<html lang="en">
+
+	<head>
+		<meta charset="UTF-8" />
+		<title>Making your first Phaser 3 Game - Part 1</title>
+		<script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js">
+
+		</script>
+		<style type="text/css">
+			body {
+				margin: 0;
+			}
+		</style>
+	</head>
+
+	<body>
+
+		<script>
+			let config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 300 },
+            debug: false
+        }
+       },
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
+
+    let player;
+    let stars;
+    let cursors;
+    let bombs;
+    let platforms;
+    let score = 0;
+    var gameOver = false;
+    let scoreText;
+
+    let game = new Phaser.Game(config);
+
+    function preload ()
+    {
+      this.load.image('backdrop', 'my_assets/backdrop.png');
+        this.load.image('bar', 'my_assets/stepbar.png');
+        this.load.image('coin', 'my_assets/coin.png', 
+        { frameWidth: 19, frameHeight: 12 }
+        );
+        this.load.image('blob', 'my_assets/blob.png');
+        this.load.spritesheet('hero', 
+        'my_assets/hero.png',
+        { frameWidth: 23, frameHeight: 29 }
+    );
+    }
+
+    function create ()
+    {
+      this.add.image(400, 300, 'backdrop');
+
+     platforms = this.physics.add.staticGroup();
+
+    platforms.create(400, 568, 'bar').setScale(2).refreshBody();
+
+    platforms.create(600, 400, 'bar');
+    platforms.create(50, 250, 'bar');
+    platforms.create(750, 220, 'bar');
+
+//add in player
+    player = this.physics.add.sprite(100, 450, 'hero');
+
+      player.setBounce(0.2);
+      player.setCollideWorldBounds(true);
+
+      this.anims.create({
+          key: 'left',
+          frames: this.anims.generateFrameNumbers('hero', {start: 6, end: 8}),
+          frameRate: 10,
+          repeat: -1
+      });
+
+      this.anims.create({
+      
+    key: 'turn',
+    frames: [{ key: 'hero', frame: 4 }],
+    frameRate: 20
+       });
+
+      this.anims.create({
+          key: 'right',
+          frames: this.anims.generateFrameNumbers('hero', { start:0, end:2 }),
+          frameRate: 10,
+          repeat: -1
+      });
+
+//curser movement
+     cursors = this.input.keyboard.createCursorKeys();
+     
+     stars = this.physics.add.group({
+          key: 'coin',
+          repeat: 11,
+          setXY: { x: 12, y: 0, stepX: 70 }
+      });
+
+      stars.children.iterate(function (child) {
+
+          child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+
+      });
+
+//purple blob enimies
+bombs = this.physics.add.group();
+
+//set collider to have sprite land on platform
+      this.physics.add.collider(player, platforms);
+//set collider so coins falls on platforms
+      this.physics.add.collider(stars, platforms);
+      //blobs collider
+      this.physics.add.collider(bombs, platforms);
+      
+      this.physics.add.overlap(player, stars, collectStar, null, this);
+
+      //blobs
+          this.physics.add.collider(player, bombs, hitBomb, null, this);
+
+      //score
+      scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#5f4a91' });
+
+    }
+
+   function update ()
+    {
+      if (gameOver)
+    {
+        return;
+    } 
+
+    if (cursors.left.isDown)
+{
+    player.setVelocityX(-160);
+
+    player.anims.play('left', true);
+}
+else if (cursors.right.isDown)
+{
+    player.setVelocityX(160);
+
+    player.anims.play('right', true);
+}
+else
+{
+    player.setVelocityX(0);
+
+    player.anims.play('turn');
+}
+
+if (cursors.up.isDown && player.body.touching.down)
+{
+    player.setVelocityY(-330);
+}
+     
+    }
+
+    function collectStar (player, star)
+{
+  
+    star.disableBody(true, true);
+        
+        score += 15;
+       scoreText.setText('Score: ' + score);
+
+   if (stars.countActive(true) === 0)
+    {
+        stars.children.iterate(function (child) {
+
+            child.enableBody(true, child.x, 0, true, true);
+
+        });
+
+        var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+
+        var bomb = bombs.create(x, 16, 'blob');
+        bomb.setBounce(1);
+        bomb.setCollideWorldBounds(true);
+        bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+
+    }
+}
+
+
+
+//player death for blobs
+function hitBomb (player, bomb)
+{
+    this.physics.pause();
+
+    player.setTint(0xeb13f2);
+
+    player.anims.play('turn');
+
+    gameOver = true;
+}
+		</script>
+
+	</body>
+
+	</html>
